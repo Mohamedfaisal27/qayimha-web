@@ -796,16 +796,18 @@ export default function GameRatingApp() {
       } catch (e) {
         setGameCovers(prev => ({ ...prev, [game.id]: { url: null } }));
       }
-      await new Promise(r => setTimeout(r, 800
-     processingQueueRef.current = false;
-   }, []);
+            await new Promise(r => setTimeout(r, 260));
+    }
+    processingQueueRef.current = false;
+  }, []);
 
-   const requestCover = useCallback((game) => {
-     if (!game || requestedCoversRef.current.has(game.id)) return;
-     requestedCoversRef.current.add(game.id);
-     coverQueueRef.current.push(game);
-     processCoverQueue();
-   }, [processCoverQueue]);
+  const requestCover = useCallback((game) => {
+    if (!game || requestedCoversRef.current.has(game.id)) return;
+    requestedCoversRef.current.add(game.id);
+    coverQueueRef.current.push(game);
+    processCoverQueue();
+  }, [processCoverQueue]);
+
 
 
   /* ------ تحميل أولي ------ */
