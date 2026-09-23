@@ -785,24 +785,14 @@ export default function GameRatingApp() {
   const coverQueueRef = useRef([]);
   const processingQueueRef = useRef(false);
 
-  const processCoverQueue = useCallback(async () => {
+    const processCoverQueue = useCallback(async () => {
     if (processingQueueRef.current) return;
     processingQueueRef.current = true;
     while (coverQueueRef.current.length > 0) {
       const game = coverQueueRef.current.shift();
       try {
-        const cacheRes = await storageGetSafe(`igdb-cover:${game.id}`, true);
-        if (cacheRes && cacheRes.value) {
-          setGameCovers(prev => ({ ...prev, [game.id]: JSON.parse(cacheRes.value) }));
-        } else {
-          const res = await fetch(`${BACKEND_URL}/api/games/search?q=${encodeURIComponent(game.name)}`);
-          const data = await res.json();
-          const match = Array.isArray(data) ? data.find(d => d.cover && d.cover.url) : null;
-          const coverUrl = match ? 'https:' + match.cover.url.replace('t_thumb', 't_cover_big') : null;
-          const result = { url: coverUrl };
-          setGameCovers(prev => ({ ...prev, [game.id]: result }));
-          await storageSetSafe(`igdb-cover:${game.id}`, JSON.stringify(result), true);
-        }
+        const result = await fetchGameCover(game, BACKEND_URL, storageGetSafe, storageSetSafe);
+        setGameCovers(prev => ({ ...prev, [game.id]: result }));
       } catch (e) {
         setGameCovers(prev => ({ ...prev, [game.id]: { url: null } }));
       }
@@ -811,7 +801,6 @@ export default function GameRatingApp() {
     processingQueueRef.current = false;
   }, []);
 
-  const requestCover = useCallback((game) => {
     if (!game || requestedCoversRef.current.has(game.id)) return;
     requestedCoversRef.current.add(game.id);
     coverQueueRef.current.push(game);
