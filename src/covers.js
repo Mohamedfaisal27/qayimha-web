@@ -20,16 +20,22 @@ function pickBestCover(data, game) {
     if (d.total_rating_count) score += Math.min(d.total_rating_count / 100, 20);
     return { d, score };
   });
-  scored.sort((a, b) => b.score - a.score);
+    scored.sort((a, b) => b.score - a.score);
+  if (scored[0].score < 30) return null;
   return scored[0].d;
 }
+
+  
+
 
 export async function fetchGameCover(game, backendUrl, storageGetSafe, storageSetSafe) {
   const cacheRes = await storageGetSafe(`igdb-cover2:${game.id}`, true);
   if (cacheRes && cacheRes.value) {
     return JSON.parse(cacheRes.value);
   }
-  const res = await fetch(`${backendUrl}/api/games/search?q=${encodeURIComponent(game.name)}`);
+    const cleanName = game.name.replace(/\s*\([^)]*\)\s*$/, '').trim();
+  const res = await fetch(`${backendUrl}/api/games/search?q=${encodeURIComponent(cleanName)}`);
+
   const data = await res.json();
   const match = pickBestCover(data, game);
   let coverUrl = null;
