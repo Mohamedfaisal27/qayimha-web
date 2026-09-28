@@ -20,23 +20,37 @@ function pickBestCover(data, game) {
     if (d.total_rating_count) score += Math.min(d.total_rating_count / 100, 20);
     return { d, score };
   });
-    scored.sort((a, b) => b.score - a.score);
+  scored.sort((a, b) => b.score - a.score);
   if (scored[0].score < 30) return null;
   return scored[0].d;
 }
 
-  
-
-
 export async function fetchGameCover(game, backendUrl, storageGetSafe, storageSetSafe) {
-  const cacheRes = await storageGetSafe(`igdb-cover2:${game.id}`, true);
-  if (cacheRes && cacheRes.value) {
-    return JSON.parse(cacheRes.value);
+  try {
+    const cacheRes = await storageGetSafe(`igdb-cover2:${game.id}`, true);
+    if (cacheRes && cacheRes.value) {
+      return JSON.parse(cacheRes.value);
+    }
+  } catch (e) {
+    if (typeof window !== 'undefined' && !window.__coverDebugShown) {
+      window.__coverDebugShown = true;
+      alert('خطأ بقراءة الكاش: ' + e.message);
+    }
   }
-    const cleanName = game.name.replace(/\s*\([^)]*\)\s*$/, '').trim();
-  const res = await fetch(`${backendUrl}/api/games/search?q=${encodeURIComponent(cleanName)}`);
 
-  const data = await res.json();
+  let data;
+  try {
+    const cleanName = game.name.replace(/\s*\([^)]*\)\s*$/, '').trim();
+    const res = await fetch(`${backendUrl}/api/games/search?q=${encodeURIComponent(cleanName)}`);
+    data = await res.json();
+  } catch (e) {
+    if (typeof window !== 'undefined' && !window.__coverDebugShown) {
+      window.__coverDebugShown = true;
+      alert('خطأ بجلب البيانات من السيرفر: ' + e.message);
+    }
+    return { url: null };
+  }
+
   const match = pickBestCover(data, game);
   let coverUrl = null;
   if (match) {
@@ -44,6 +58,15 @@ export async function fetchGameCover(game, backendUrl, storageGetSafe, storageSe
     coverUrl = (raw.startsWith('//') ? 'https:' + raw : raw).replace(/\/t_[a-z0-9_]+\//, '/t_720p/');
   }
   const result = { url: coverUrl };
-  await storageSetSafe(`igdb-cover2:${game.id}`, JSON.stringify(result), true);
+
+  try {
+    await storageSetSafe(`igdb-cover2:${game.id}`, JSON.stringify(result), true);
+  } catch (e) {
+    if (typeof window !== 'undefined' && !window.__coverDebugShown) {
+      window.__coverDebugShown = true;
+      alert('خطأ بحفظ الكاش: ' + e.message);
+    }
+  }
+
   return result;
 }
