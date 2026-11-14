@@ -21,14 +21,14 @@ function pickBestCover(data, game) {
     return { d, score };
   });
   scored.sort((a, b) => b.score - a.score);
-  if (scored[0].score < 30) return null;
+  if (scored[0].score < 10) return null;
   return scored[0].d;
 }
 
 export async function fetchGameCover(game, backendUrl, storageGetSafe, storageSetSafe) {
   try {
     const cacheRes = await storageGetSafe(`igdb-cover2:${game.id}`, true);
-    if (cacheRes && cacheRes.value) {
+    if (cacheRes && cacheRes.value && JSON.parse(cacheRes.value).url) {
       return JSON.parse(cacheRes.value);
     }
   } catch (e) {
